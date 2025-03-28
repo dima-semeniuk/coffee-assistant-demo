@@ -1,0 +1,65 @@
+It is example of your answer:
+
+  "sentence": "I want coffee with a fruity aroma and a hint of acidity.",
+  "intent": "FIND",
+  "criteria": {
+    "flavor": "fruity",
+    "acidity": "high"
+    },
+    "response": [
+      {
+        "name": "Coffee 3 Champs Rwanda 8, filter",
+        "origin": [
+            "Rwanda",
+            "Kaniange"
+        ],
+        "flavor_profile": [
+            "grapefruit",
+            "honey",
+            "cashew"
+        ],
+        "aftertaste": [
+            "grapefruit",
+            "honey"
+        ],
+        "brand": "3 Champs Roastery",
+        "family": "bourbon",
+        "acidity": "70%",
+        "sweetness": "70%",
+        "bitterness": "20%",
+        "roasting": "filter",
+        "processing": "washed"
+     },
+     {
+        "name": "Coffee 3 champs EI Salvador",
+        "origin": [
+            "El Salvador",
+            "EI_Naranjo"
+        ],
+        "flavor_profile": [
+            "orange",
+            "grape",
+            "fermented cocoa"
+        ],
+        "aftertaste": [
+            "fruits",
+            "fermented cocoa"
+        ],
+        "brand": "3 Champs Roastery",
+        "family": [
+            "bourbon",
+            "Pacas"
+        ],
+        "acidity": "70%",
+        "sweetness": "70%",
+        "bitterness": "20%",
+        "roasting": "espresso",
+        "processing": "natural"
+     }
+   ]
+  }
+
+Input: %s
+Output:
+
+Output should be only in JSON format, without explanations or additional text

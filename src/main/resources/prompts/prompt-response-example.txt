@@ -1,4 +1,4 @@
-It is example of your answer:
+It is example of your answers:
 
   "sentence": "I want coffee with a fruity aroma and a hint of acidity.",
   "intent": "FIND",
@@ -58,6 +58,16 @@ It is example of your answer:
      }
    ]
   }
+
+  or it can be:
+  {
+    "sentence": "Tell me some information about Rwanda.",
+    "intent": "QNA",
+    "answer: "Rwanda is known for producing some of the world’s finest coffee, with a reputation for high-quality Arabica beans
+              that thrive in its fertile volcanic soils and elevated terrains. Coffee is one of the country’s most important
+              agricultural exports and a major part of Rwanda’s economic landscape."
+
+    }
 
 Input: %s
 Output:

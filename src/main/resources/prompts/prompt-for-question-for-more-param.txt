@@ -7,6 +7,7 @@ and the sample values of the parameters should be from the options already found
 The number of parameters should be such that the search is as narrow as possible.
 If multiple options are suitable, specify additional criteria.
 And do not ask for parameters if the values of these parameters are the same for all coffees, for example, 'roasting: filter'.
+If the user is unsure or don't know, select the best coffee yourself from previous variant.
 
 The output should be a question
 

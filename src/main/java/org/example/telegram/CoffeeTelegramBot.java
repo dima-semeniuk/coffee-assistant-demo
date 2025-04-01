@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CoffeeTelegramBot extends TelegramLongPollingBot {
     private static final Logger log
             = LoggerFactory.getLogger(CoffeeTelegramBot.class);
-    private final Map<Long, CoffeeAssistant> userServices = new ConcurrentHashMap<>();
+    private final Map<Long, CoffeeAssistant> coffeeAssistants = new ConcurrentHashMap<>();
     private final CoffeeAssistantFactory assistantFactory;
 
     @Value("${bot.name}")
@@ -48,24 +48,21 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             long chatId = update.getMessage().getChatId();
             String messageText = update.getMessage().getText();
-            CoffeeAssistant service = getOrCreateAssistant(chatId); // Отримуємо або створюємо асистент для цього чату
+            CoffeeAssistant coffeeAssistant = getOrCreateAssistant(chatId); // Отримуємо або створюємо асистент для цього чату
 
             switch (messageText) {
-                case "/start":
+                case "/start" -> sendCoffeeAssistantKeyboard(chatId);
+                case "Coffee Assistant" -> sendMessageWithButtons(chatId);
+                case "Start conversation" -> {
+                    coffeeAssistant.startConversation(chatId, this);
+                    sendOnlyExitButton(chatId);
+                }
+                case "Exit" -> {
+                    coffeeAssistants.remove(chatId);
                     sendCoffeeAssistantKeyboard(chatId);
-                    break;
-                case "Coffee Assistant":
-                    sendMessageWithButtons(chatId);
-                    break;
-                case "Start conversation":
-//                    service.startConversation(chatId, this);
-                    break;
-                case "Exit":
-                    sendCoffeeAssistantKeyboard(chatId);
-                    break;
-                default:
-//                    service.processUserMessage(chatId, messageText, this);
-                    break;
+                }
+                default ->
+                        coffeeAssistant.processUserMessage(chatId, messageText, this); // Обробка тексту від користувача
             }
         }
     }
@@ -95,7 +92,7 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
         row1.add(new KeyboardButton("Start conversation"));
 
         KeyboardRow row2 = new KeyboardRow();
-        row1.add(new KeyboardButton("Exit"));
+        row2.add(new KeyboardButton("Exit"));
 
         keyboardMarkup.setKeyboard(List.of(row1, row2));
         message.setReplyMarkup(keyboardMarkup);
@@ -104,6 +101,28 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
             execute(message); // Відправка повідомлення з кнопками
         } catch (TelegramApiException e) {
             log.error("Error occurred: " + e.getMessage());
+        }
+    }
+
+    private void sendOnlyExitButton(long chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("--Press 'Exit' to go back--");
+
+        // Створюємо клавіатуру тільки з кнопкою "Exit"
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+
+        KeyboardRow row = new KeyboardRow();
+        row.add(new KeyboardButton("Exit")); // Залишаємо тільки "Exit"
+
+        keyboardMarkup.setKeyboard(List.of(row));
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error sending 'Exit' keyboard: {}", e.getMessage());
         }
     }
 
@@ -129,6 +148,6 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
     }
 
     private CoffeeAssistant getOrCreateAssistant(Long chatId) {
-        return userServices.computeIfAbsent(chatId, id -> assistantFactory.createCoffeeAssistant());
+        return coffeeAssistants.computeIfAbsent(chatId, id -> assistantFactory.createCoffeeAssistant());
     }
 }

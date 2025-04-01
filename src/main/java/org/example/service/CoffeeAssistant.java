@@ -1,11 +1,14 @@
 package org.example.service;
 
+import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.RequiredArgsConstructor;
+import org.example.telegram.CoffeeTelegramBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -21,125 +24,181 @@ public class CoffeeAssistant {
 
     private final ChatLanguageModel chatLanguageModel;
     private final FileReader fileReader;
+    private ConversationState state = ConversationState.INITIAL;
     private final List<String> memoryAnswers = new ArrayList<>();
+    private List<String> currentCoffees = new ArrayList<>();
+    private List<String> questionsForUser = new ArrayList<>();
     private final Scanner scanner = new Scanner(System.in);
 
-    public void assistForCoffee() {
-        try {
-            logger.info("Hello! I am a coffee assistant! What coffee do you want: ");
-            String response = getResponseFromOntology(RDF_FILE_PATH, PROMPT_RDF);
 
-            for (int counter = 0; counter < 5; counter++) {
-                if (response.contains("answer")) {
-                    List<String> qnaList = JsonUtil.parseCoffeeList(response, "answer");
-                        logger.info(qnaList.get(0));
-                        qnaList.clear();
-                        logger.info("So, let's return to coffee) What coffee do you want?");
-                        response = getResponseFromOntology(RDF_FILE_PATH, PROMPT_RDF);
-                        continue;
-                }
-                break;
-            }
+    public void startConversation(Long chatId, CoffeeTelegramBot bot) {
+        bot.sendMessage(chatId, "Hello! I am your coffee assistant. What kind of coffee are you looking for?");
+        state = ConversationState.WAITING_FOR_FIRST_QUERY;
+    }
 
-            //When the user has made a QNA query for the sixth time, exit the app
-            if (response.contains("answer")) {
-                logger.info("Goodbye!!!");
-                return;
-            }
-
-            memoryAnswers.add(response);
-            logger.info(response);
-
-
-            while (true) {
-                List<String> coffees = JsonUtil.parseCoffeeList(response, "response");
-
-                if (coffees.size() == 1) {
-                    logger.info("Your coffee " + "☕" + coffees.get(0));
-                    return;
-                }
-
-                if (coffees.size() == 2) {
-                    response = refineSelection(PROMPT_CHOOSE_ONE, PROMPT_RESPONSE_EXAMPLE);
-                    logger.info(response);
-                    if (response.contains("answer")) {
-                        logger.info("Goodbye!!!");
-                        return;
-                    }
-                } else if (coffees.size() > 2) {
-                    response = refineSelection(PROMPT_MORE_PARAM, PROMPT_RESPONSE_EXAMPLE);
-                    logger.info(response);
-                    if (response.contains("answer")) {
-                        logger.info("Goodbye!!!");
-                        return;
-                    }
-                } else {
-                    logger.info("No coffee found. Please specify more general parameters like 'taste', " +
-                            "'acidity', 'roasting method', 'processing type' etc.");
-                    response = getResponseFromOntology(RDF_FILE_PATH, PROMPT_RDF);
-                    logger.info(response);
-
-                    for (int counter = 0; counter < 5; counter++) {
-                        if (response.contains("answer")) {
-                            List<String> qnaList = JsonUtil.parseCoffeeList(response, "answer");
-                            logger.info(qnaList.get(0));
-                            qnaList.clear();
-                            logger.info("So, let's return to coffee) What coffee do you want?");
-                            response = getResponseFromOntology(RDF_FILE_PATH, PROMPT_RDF);
-                            continue;
-                        }
-                        break;
-                    }
-
-                    //When the user has made a QNA query for the sixth time, exit the app
-                    if (response.contains("answer")) {
-                        logger.info("Goodbye!!!");
-                        return;
-                    }
-                }
-
-                memoryAnswers.add(response);
-            }
-        } finally {
-            scanner.close();
+    public void processUserMessage(Long chatId, String messageText, CoffeeTelegramBot bot) {
+        switch (state) {
+            case INITIAL -> startConversation(chatId, bot);
+            case WAITING_FOR_FIRST_QUERY -> handleFirstQuery(chatId, messageText, bot);
+            case WAITING_FOR_QNA_ANSWER -> handleQnaAnswer(chatId, messageText, bot);
+            case CHOOSING_BETWEEN_COFFEES -> handleChoosingCoffee(chatId, messageText, bot);
+            case ASKING_MORE_PARAMETERS -> handleMoreParameters(chatId, messageText, bot);
+            default -> bot.sendMessage(chatId, "I don't understand. Let's start again. What coffee are you looking for?");
         }
+    }
+
+    private void handleFirstQuery(Long chatId, String messageText, CoffeeTelegramBot bot) {
+        String response = getResponseFromOntology(RDF_FILE_PATH, PROMPT_RDF, messageText);
+
+        if (response.contains("answer")) {
+            handleQna(chatId, bot, response);
+            return;
+        }
+
+        memoryAnswers.add(response);
+        currentCoffees = JsonUtil.parseCoffeeList(response, "response");
+
+        if (currentCoffees.isEmpty()) {
+            bot.sendMessage(chatId, "No coffee found. Please specify more general parameters like 'taste', 'acidity', 'roasting method', 'processing type', etc.");
+            return;
+        }
+
+        handleCoffeeOptions(chatId, bot);
+        logger.info(response);
+    }
+
+    private void handleCoffeeOptions(Long chatId, CoffeeTelegramBot bot) {
+        if (currentCoffees.size() == 1) {
+            bot.sendMessage(chatId, "Your coffee ☕: " + currentCoffees.get(0));
+            resetState();
+        } else if (currentCoffees.size() == 2) {
+            bot.sendMessage(chatId, "I found two options. Please choose one: ");
+            bot.sendMessage(chatId, currentCoffees.get(0) + System.lineSeparator() + currentCoffees.get(1));
+            String questionForUser = makeQuestion(PROMPT_CHOOSE_ONE);
+            questionsForUser.add(questionForUser);
+            bot.sendMessage(chatId, questionForUser);
+            state = ConversationState.CHOOSING_BETWEEN_COFFEES;
+        } else {
+            bot.sendMessage(chatId, "I found multiple options. Could you specify more preferences?");
+            String questionForUser = makeQuestion(PROMPT_MORE_PARAM);
+            questionsForUser.add(questionForUser);
+            bot.sendMessage(chatId, questionForUser);
+            state = ConversationState.ASKING_MORE_PARAMETERS;
+        }
+    }
+
+    private void handleMoreParameters(Long chatId, String messageText, CoffeeTelegramBot bot) {
+        String response = refineSelection(PROMPT_RESPONSE_EXAMPLE, messageText);
+
+        if (response.contains("answer")) {
+            handleQna(chatId, bot, response);
+            return;
+        }
+
+        memoryAnswers.add(response);
+
+        currentCoffees = JsonUtil.parseCoffeeList(response, "response");
+
+        if (currentCoffees.isEmpty()) {
+            bot.sendMessage(chatId, "No coffee found. Try specifying different parameters.");
+            return;
+        }
+
+        handleCoffeeOptions(chatId, bot);
+    }
+
+    private void handleChoosingCoffee(Long chatId, String messageText, CoffeeTelegramBot bot) {
+        String response = refineSelection(PROMPT_RESPONSE_EXAMPLE, messageText);
+
+        if (response.contains("answer")) {
+            handleQna(chatId, bot, response);
+            return;
+        }
+
+        memoryAnswers.add(response);
+
+        currentCoffees = JsonUtil.parseCoffeeList(response, "response");
+
+        if (currentCoffees.isEmpty()) {
+            bot.sendMessage(chatId, "No coffee found. Try specifying different parameters.");
+            return;
+        }
+
+        handleCoffeeOptions(chatId, bot);
+        logger.info(response);
+    }
+
+    private void handleQnaAnswer(Long chatId, String messageText, CoffeeTelegramBot bot) {
+        String response;
+        if (currentCoffees.isEmpty()) {
+            response = getResponseFromOntology(RDF_FILE_PATH, PROMPT_RDF, messageText);
+        } else {
+            response = refineSelection(PROMPT_RESPONSE_EXAMPLE, messageText);
+        }
+
+        if (response.contains("answer")) {
+            handleQna(chatId, bot, response);
+            return;
+        }
+
+        memoryAnswers.add(response);
+
+        currentCoffees = JsonUtil.parseCoffeeList(response, "response");
+
+        if (currentCoffees.isEmpty()) {
+            bot.sendMessage(chatId, "No coffee found. Try specifying different parameters.");
+            return;
+        }
+
+        handleCoffeeOptions(chatId, bot);
 
     }
 
-    private String refineSelection(String prompt1FilePath, String prompt2FilePath) {
-        String prompt = fileReader.readFileFromResources(prompt1FilePath);
+    private void handleQna(Long chatId, CoffeeTelegramBot bot, String response) {
+        List<String> qnaList = JsonUtil.parseCoffeeList(response, "answer");
+        if (!qnaList.isEmpty()) {
+            bot.sendMessage(chatId, qnaList.get(0));
+            bot.sendMessage(chatId, "So, let's return to coffee! What coffee do you want?");
+            if (!questionsForUser.isEmpty()) {
+                bot.sendMessage(chatId, questionsForUser.get(questionsForUser.size() - 1));
+            }
+            state = ConversationState.WAITING_FOR_QNA_ANSWER;
+        }
+    }
+
+
+    private String refineSelection(String answerExampleFilePath, String userInput) {
+        String answerExamples = fileReader.readFileFromResources(answerExampleFilePath); // Читаємо приклади відповіді
         String previousAnswers = memoryAnswers.get(memoryAnswers.size() - 1);
-        String question = chatLanguageModel.chat("Previous answers: " + previousAnswers + " " + prompt);
-        logger.info(question);
 
-        String prompt2 = fileReader.readFileFromResources(prompt2FilePath);
-        String userInput = scanner.nextLine();
-        String response =  chatLanguageModel.chat("User refinement: " + userInput + " Previous answers: " + previousAnswers
-                + " If the user is unsure or don't know, select the best coffee yourself from previous variant. "
-                + prompt2);
-
-        for (int counter = 0; counter < 5; counter++) {
-            if (response.contains("answer")) {
-                List<String> qnaList = JsonUtil.parseCoffeeList(response, "answer");
-                logger.info(qnaList.get(0));
-                qnaList.clear();
-                logger.info("So, let's return to coffee) What coffee do you want? " + question);
-                userInput = scanner.nextLine();
-                response = chatLanguageModel.chat("User refinement: " + userInput + " Previous answers: " + previousAnswers
-                        + " If the user is unsure or don't know, select the best coffee yourself from previous variant. "
-                        + prompt2);
-                continue;
-            }
-            break;
-        }
-
-        return response;
+        return chatLanguageModel.chat("User refinement: " + userInput
+                + " Previous answers: " + previousAnswers
+                + " Answer examples: " + answerExamples);
     }
 
-    private String getResponseFromOntology(String ontologyPath, String promptPath) {
+    private String makeQuestion(String promptFilePath) {
+        String prompt = fileReader.readFileFromResources(promptFilePath);
+        String previousAnswers = memoryAnswers.get(memoryAnswers.size() - 1);
+        return chatLanguageModel.chat("Previous answers: " + previousAnswers + " " + prompt);
+    }
+
+    private String getResponseFromOntology(String ontologyPath, String promptFilePath, String userQuery) {
         String textRdf = fileReader.readFileFromResources(ontologyPath);
-        String prompt = fileReader.readFileFromResources(promptPath);
-        String userQuery = scanner.nextLine();
+        String prompt = fileReader.readFileFromResources(promptFilePath);
         return chatLanguageModel.chat(prompt + " Ontology RDF/XML: " + textRdf + " Query: " + userQuery);
+    }
+
+    private void resetState() {
+        state = ConversationState.INITIAL;
+        memoryAnswers.clear();
+        currentCoffees.clear();
+    }
+
+    private enum ConversationState {
+        INITIAL,
+        WAITING_FOR_QNA_ANSWER,
+        WAITING_FOR_FIRST_QUERY,
+        CHOOSING_BETWEEN_COFFEES,
+        ASKING_MORE_PARAMETERS
     }
 }

@@ -3,6 +3,7 @@ You analyzed the RDF/XML ontology and give multiple answer of coffees.
 You need help choosing between two coffees. Ask a clarifying question with some other parameters that will help you.
 But the example parameter values should be from the options that have already been found. And do not ask for parameters
 if the values of these parameters are the same for all coffees, for example, 'roasting: filter'.
+If the user is unsure or don't know, select the best coffee yourself from previous variant.
 
 Output should be a question.
 

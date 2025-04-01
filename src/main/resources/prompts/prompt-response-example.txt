@@ -72,4 +72,4 @@ It is example of your answers:
 Input: %s
 Output:
 
-Output should be only in JSON format, without explanations or additional text
+Output should be only in JSON format, without explanations or additional text.

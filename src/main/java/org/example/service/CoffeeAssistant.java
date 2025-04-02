@@ -46,13 +46,16 @@ public class CoffeeAssistant {
     private void handleFirstQuery(Long chatId, String messageText, CoffeeTelegramBot bot) {
         String response = getResponseFromOntology(RDF_FILE_PATH, PROMPT_RDF, messageText);
 
-        if (response.contains("answer")) {
+        if (JsonUtil.hasAnswerKey(response,"answer")) {
             handleQna(chatId, bot, response);
             logger.info(response);
             return;
         }
 
-        memoryAnswers.add(response);
+        if (JsonUtil.hasAnswerKey(response, "response")
+                || JsonUtil.hasAnswerKey(response, "answer")) {
+            memoryAnswers.add(response);
+        }
         currentCoffees = JsonUtil.parseCoffeeList(response, "response");
 
         if (currentCoffees.isEmpty()) {
@@ -87,13 +90,16 @@ public class CoffeeAssistant {
     private void handleMoreParameters(Long chatId, String messageText, CoffeeTelegramBot bot) {
         String response = refineSelection(PROMPT_RESPONSE_EXAMPLE, messageText);
 
-        if (response.contains("answer")) {
+        if (JsonUtil.hasAnswerKey(response,"answer")) {
             handleQna(chatId, bot, response);
             logger.info(response);
             return;
         }
 
-        memoryAnswers.add(response);
+        if (JsonUtil.hasAnswerKey(response, "response")
+                || JsonUtil.hasAnswerKey(response, "answer")) {
+            memoryAnswers.add(response);
+        }
 
         currentCoffees = JsonUtil.parseCoffeeList(response, "response");
 
@@ -109,13 +115,16 @@ public class CoffeeAssistant {
     private void handleChoosingCoffee(Long chatId, String messageText, CoffeeTelegramBot bot) {
         String response = refineSelection(PROMPT_RESPONSE_EXAMPLE, messageText);
 
-        if (response.contains("answer")) {
+        if (JsonUtil.hasAnswerKey(response,"answer")) {
             handleQna(chatId, bot, response);
             logger.info(response);
             return;
         }
 
-        memoryAnswers.add(response);
+        if (JsonUtil.hasAnswerKey(response, "response")
+                || JsonUtil.hasAnswerKey(response, "answer")) {
+            memoryAnswers.add(response);
+        }
 
         currentCoffees = JsonUtil.parseCoffeeList(response, "response");
 
@@ -136,13 +145,16 @@ public class CoffeeAssistant {
             response = refineSelection(PROMPT_RESPONSE_EXAMPLE, messageText);
         }
 
-        if (response.contains("answer")) {
+        if (JsonUtil.hasAnswerKey(response,"answer")) {
             handleQna(chatId, bot, response);
             logger.info(response);
             return;
         }
 
-        memoryAnswers.add(response);
+        if (JsonUtil.hasAnswerKey(response, "response")
+                || JsonUtil.hasAnswerKey(response, "answer")) {
+            memoryAnswers.add(response);
+        }
 
         currentCoffees = JsonUtil.parseCoffeeList(response, "response");
 
@@ -171,7 +183,7 @@ public class CoffeeAssistant {
 
     private String refineSelection(String answerExampleFilePath, String userInput) {
         String answerExamples = fileReader.readFileFromResources(answerExampleFilePath); // Читаємо приклади відповіді
-        String previousAnswers = memoryAnswers.get(memoryAnswers.size() - 1);
+        String previousAnswers = String.join(" ", memoryAnswers);
 
         return chatLanguageModel.chat("User refinement: " + userInput
                 + " Previous answers: " + previousAnswers

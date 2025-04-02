@@ -55,9 +55,9 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
                 case "Coffee Assistant" -> sendMessageWithButtons(chatId);
                 case "Start conversation" -> {
                     coffeeAssistant.startConversation(chatId, this);
-                    sendOnlyExitButton(chatId);
+                    sendOnlyEndConversationButton(chatId);
                 }
-                case "Exit" -> {
+                case "End conversation" -> {
                     coffeeAssistants.remove(chatId);
                     sendCoffeeAssistantKeyboard(chatId);
                 }
@@ -92,7 +92,7 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
         row1.add(new KeyboardButton("Start conversation"));
 
         KeyboardRow row2 = new KeyboardRow();
-        row2.add(new KeyboardButton("Exit"));
+        row2.add(new KeyboardButton("End conversation"));
 
         keyboardMarkup.setKeyboard(List.of(row1, row2));
         message.setReplyMarkup(keyboardMarkup);
@@ -104,17 +104,18 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendOnlyExitButton(long chatId) {
+    private void sendOnlyEndConversationButton(long chatId) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        message.setText("--Press 'Exit' to go back--");
+        message.setText("To exit press --End conversation--");
 
-        // Створюємо клавіатуру тільки з кнопкою "Exit"
+
+        // Створюємо клавіатуру тільки з кнопкою "End conversation"
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         keyboardMarkup.setResizeKeyboard(true);
 
         KeyboardRow row = new KeyboardRow();
-        row.add(new KeyboardButton("Exit")); // Залишаємо тільки "Exit"
+        row.add(new KeyboardButton("End conversation")); // Залишаємо тільки "EndConversation"
 
         keyboardMarkup.setKeyboard(List.of(row));
         message.setReplyMarkup(keyboardMarkup);
@@ -122,7 +123,7 @@ public class CoffeeTelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error sending 'Exit' keyboard: {}", e.getMessage());
+            log.error("Error sending 'End conversation' keyboard: {}", e.getMessage());
         }
     }
 

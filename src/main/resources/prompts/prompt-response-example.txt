@@ -1,75 +1,51 @@
 It is example of your answers:
 
+{
   "sentence": "I want coffee with a fruity aroma and a hint of acidity.",
   "intent": "FIND",
   "criteria": {
     "flavor": "fruity",
     "acidity": "high"
+  },
+  "response": [
+    {
+      "name": "Coffee 3 Champs Rwanda 8, filter",
+      "origin": ["Rwanda", "Kaniange"],
+      "flavor_profile": ["grapefruit", "honey", "cashew"],
+      "aftertaste": ["grapefruit", "honey"],
+      "brand": "3 Champs Roastery",
+      "family": ["bourbon"],
+      "acidity": "70%",
+      "sweetness": "70%",
+      "bitterness": "20%",
+      "roasting": "filter",
+      "processing": "washed"
     },
-    "response": [
-      {
-        "name": "Coffee 3 Champs Rwanda 8, filter",
-        "origin": [
-            "Rwanda",
-            "Kaniange"
-        ],
-        "flavor_profile": [
-            "grapefruit",
-            "honey",
-            "cashew"
-        ],
-        "aftertaste": [
-            "grapefruit",
-            "honey"
-        ],
-        "brand": "3 Champs Roastery",
-        "family": "bourbon",
-        "acidity": "70%",
-        "sweetness": "70%",
-        "bitterness": "20%",
-        "roasting": "filter",
-        "processing": "washed"
-     },
-     {
-        "name": "Coffee 3 champs EI Salvador",
-        "origin": [
-            "El Salvador",
-            "EI_Naranjo"
-        ],
-        "flavor_profile": [
-            "orange",
-            "grape",
-            "fermented cocoa"
-        ],
-        "aftertaste": [
-            "fruits",
-            "fermented cocoa"
-        ],
-        "brand": "3 Champs Roastery",
-        "family": [
-            "bourbon",
-            "Pacas"
-        ],
-        "acidity": "70%",
-        "sweetness": "70%",
-        "bitterness": "20%",
-        "roasting": "espresso",
-        "processing": "natural"
-     }
-   ]
-  }
-
-  or it can be:
-  {
-    "sentence": "Tell me some information about Rwanda.",
-    "intent": "QNA",
-    "answer: "Rwanda is known for producing some of the world’s finest coffee, with a reputation for high-quality Arabica beans
-              that thrive in its fertile volcanic soils and elevated terrains. Coffee is one of the country’s most important
-              agricultural exports and a major part of Rwanda’s economic landscape."
-
+    {
+      "name": "Coffee 3 champs El Salvador",
+      "origin": ["El Salvador", "El_Naranjo"],
+      "flavor_profile": ["orange", "grape", "fermented cocoa"],
+      "aftertaste": ["fruits", "fermented cocoa"],
+      "brand": "3 Champs Roastery",
+      "family": ["bourbon", "Pacas"],
+      "acidity": "70%",
+      "sweetness": "70%",
+      "bitterness": "20%",
+      "roasting": "espresso",
+      "processing": "natural"
     }
+  ]
+}
+
+or
+
+{
+  "sentence": "Tell me some information about Rwanda.",
+  "intent": "QNA",
+  "answer": "Rwanda is known for producing some of the world’s finest coffee, with a reputation for high-quality Arabica beans that thrive in its fertile volcanic soils and elevated terrains. Coffee is one of the country’s most important agricultural exports and a major part of Rwanda’s economic landscape."
+}
 
 Input: %s
 Output:
 
-Output should be only in JSON format, without explanations or additional text.
+Output should be only in valid JSON format, without explanations or additional text.

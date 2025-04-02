@@ -80,4 +80,21 @@ public class JsonUtil {
 
         return details.toString();
     }
+
+    public static boolean hasAnswerKey(String response, String rNode) {
+        try {
+            String jsonResponse = response.trim()
+                    .replaceAll("^```json\\s*|```$", "")
+                    .replaceAll("(?<!\\\\)\\n", " "); // Прибираємо некоректні переноси рядків
+
+            // Парсинг очищеного JSON
+            JsonNode responseNode = objectMapper.readTree(jsonResponse);
+
+            // Перевірка наявності саме ключа "answer"
+            return responseNode.has(rNode);
+        } catch (JsonProcessingException e) {
+            logger.error("JSON parsing error: {}", e.getMessage(), e);
+            return false;
+        }
+    }
 }

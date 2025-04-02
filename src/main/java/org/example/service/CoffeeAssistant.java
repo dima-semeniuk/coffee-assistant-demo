@@ -1,6 +1,5 @@
 package org.example.service;
 
-import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.RequiredArgsConstructor;
 import org.example.telegram.CoffeeTelegramBot;
@@ -8,9 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 
 @RequiredArgsConstructor
 public class CoffeeAssistant {
@@ -28,7 +25,6 @@ public class CoffeeAssistant {
     private final List<String> memoryAnswers = new ArrayList<>();
     private List<String> currentCoffees = new ArrayList<>();
     private List<String> questionsForUser = new ArrayList<>();
-    private final Scanner scanner = new Scanner(System.in);
 
 
     public void startConversation(Long chatId, CoffeeTelegramBot bot) {
@@ -52,6 +48,7 @@ public class CoffeeAssistant {
 
         if (response.contains("answer")) {
             handleQna(chatId, bot, response);
+            logger.info(response);
             return;
         }
 
@@ -92,6 +89,7 @@ public class CoffeeAssistant {
 
         if (response.contains("answer")) {
             handleQna(chatId, bot, response);
+            logger.info(response);
             return;
         }
 
@@ -105,6 +103,7 @@ public class CoffeeAssistant {
         }
 
         handleCoffeeOptions(chatId, bot);
+        logger.info(response);
     }
 
     private void handleChoosingCoffee(Long chatId, String messageText, CoffeeTelegramBot bot) {
@@ -112,6 +111,7 @@ public class CoffeeAssistant {
 
         if (response.contains("answer")) {
             handleQna(chatId, bot, response);
+            logger.info(response);
             return;
         }
 
@@ -138,6 +138,7 @@ public class CoffeeAssistant {
 
         if (response.contains("answer")) {
             handleQna(chatId, bot, response);
+            logger.info(response);
             return;
         }
 
@@ -151,6 +152,7 @@ public class CoffeeAssistant {
         }
 
         handleCoffeeOptions(chatId, bot);
+        logger.info(response);
 
     }
 
